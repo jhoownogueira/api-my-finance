@@ -1,0 +1,165 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                  String             @id @default(uuid())
+  name                String
+  username            String             @unique
+  email               String             @unique
+  password            String
+  createdAt           DateTime           @default(now())
+  wallets             UserWallet[]
+  sentInvitations     WalletInvitation[] @relation("InvitationSender")
+  receivedInvitations WalletInvitation[] @relation("InvitationReceiver")
+  categories          Category[]
+  Wallet              Wallet[]
+
+  @@map("users")
+}
+
+model UserWallet {
+  id          String           @id @default(uuid())
+  userId      String
+  user        User             @relation(fields: [userId], references: [id])
+  walletId    String
+  wallet      Wallet           @relation(fields: [walletId], references: [id])
+  permissions UserPermission
+  status      UserWalletStatus
+  joinedAt    DateTime         @default(now())
+
+  @@map("user_wallets")
+}
+
+enum UserPermission {
+  ADMIN
+  READ
+  WRITE
+}
+
+enum UserWalletStatus {
+  ATIVA
+  DESATIVADA
+}
+
+model Wallet {
+  id          String             @id @default(uuid())
+  name        String
+  type        WalletType
+  balance     Float
+  status      WalletStatus
+  createdAt   DateTime           @default(now())
+  ownerId     String
+  owner       User               @relation(fields: [ownerId], references: [id])
+  users       UserWallet[]
+  invitations WalletInvitation[]
+  invoices    Invoice[]
+
+  @@map("wallets")
+}
+
+enum WalletType {
+  PESSOAL
+  COMPARTILHADA
+}
+
+enum WalletStatus {
+  ATIVA
+  DESATIVADA
+}
+
+model WalletInvitation {
+  id          String           @id @default(uuid())
+  walletId    String
+  wallet      Wallet           @relation(fields: [walletId], references: [id])
+  senderId    String
+  sender      User             @relation(fields: [senderId], references: [id], name: "InvitationSender")
+  receiverId  String
+  receiver    User             @relation(fields: [receiverId], references: [id], name: "InvitationReceiver")
+  permissions UserPermission
+  status      InvitationStatus
+  sendAt      DateTime
+  respondedAt DateTime?
+
+  @@map("wallet_invitations")
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+model Category {
+  id        String          @id @default(uuid())
+  name      String
+  type      TransactionType
+  status    CategoryStatus
+  createdAt DateTime        @default(now())
+  userId    String
+  user      User            @relation(fields: [userId], references: [id])
+  invoices  Invoice[]
+
+  @@map("categories")
+}
+
+enum TransactionType {
+  RECEITA
+  DESPESA
+}
+
+enum CategoryStatus {
+  ATIVA
+  DESATIVADA
+}
+
+model Invoice {
+  id          String          @id @default(uuid())
+  name        String
+  type        TransactionType
+  total       Float
+  parcels     Int
+  paidParcels Int
+  status      InvoiceStatus
+  createdAt   DateTime        @default(now())
+  categoryId  String
+  category    Category        @relation(fields: [categoryId], references: [id])
+  walletId    String
+  wallet      Wallet          @relation(fields: [walletId], references: [id])
+  bills       Bill[]
+
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  CLOSED
+  PENDING
+}
+
+model Bill {
+  id          String     @id @default(uuid())
+  name        String
+  dueDate     DateTime
+  paymentDate DateTime?
+  amount      Float
+  status      BillStatus
+  createdAt   DateTime   @default(now())
+  invoiceId   String
+  invoice     Invoice    @relation(fields: [invoiceId], references: [id])
+
+  @@map("bills")
+}
+
+enum BillStatus {
+  CLOSED
+  PENDING
+}
