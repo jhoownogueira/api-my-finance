@@ -4,6 +4,8 @@ import { WalletController } from './wallet.controller';
 import { IWalletRepository } from './repositories/wallet.repository';
 import { WalletPrismaRepository } from './repositories/prisma/wallet.prisma.repository';
 import { CreateWalletService } from './services/create-wallet.service';
+import { IUserWalletsRepository } from './repositories/userWallets.repository';
+import { UserWalletsPrismaRepository } from './repositories/prisma/userWallet.prisma.repository';
 
 @Module({
   imports: [],
@@ -14,6 +16,10 @@ import { CreateWalletService } from './services/create-wallet.service';
     {
       provide: IWalletRepository,
       useClass: WalletPrismaRepository,
+    },
+    {
+      provide: IUserWalletsRepository,
+      useClass: UserWalletsPrismaRepository,
     },
   ],
 })
